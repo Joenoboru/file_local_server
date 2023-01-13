@@ -9,70 +9,46 @@ router.get("/*", async function (req, res, next) {
     return res.status(404).send("not found");
   }
   if (fs.statSync(filePath).isFile()) {
-    res.download(filePath);
+    return res.download(filePath);
   }
-  if (!fs.statSync(filePath).isFile()) {
-    const { orderBy, orderByDirection, filterByName } = req.query;
-    const files = [];
-    // filter dir files by name
-    fs.readdirSync(filePath).forEach((file) => {
-      let stats = fs.statSync(`${filePath}/${file}`);
-      let fileObj;
-      if (!fs.statSync(`${filePath}/${file}`).isFile()) {
-        fileObj = { name: `${file}/`, ...stats };
-      } else {
-        fileObj = { name: `${file}`, ...stats };
-      }
-      if (filterByName && file.includes(filterByName)) {
-        files.push({
-          fileName: fileObj.name,
-          size: fileObj.size,
-          lastModified: fileObj.mtimeMs,
-        });
-      }
-      if (!filterByName) {
-        files.push({
-          fileName: fileObj.name,
-          size: fileObj.size,
-          lastModified: fileObj.mtimeMs,
-        });
-      }
+  const { orderBy, orderByDirection, filterByName } = req.query;
+  // filter dir files by name
+  const files = fs
+    .readdirSync(filePath)
+    .filter((file) => !filterByName || file.includes(filterByName))
+    .map((file) => {
+      const stats = fs.statSync(`${filePath}/${file}`);
+      return {
+        fileName: `${file}${stats.isFile() ? "" : "/"}`,
+        size: stats.size,
+        lastModified: stats.mtimeMs,
+      };
     });
-    let key;
-    switch (orderBy) {
-      case "size":
-        key = "size";
-        break;
-      case "lastModified":
-        key = "lastModified";
-        break;
-      case "fileName":
-        key = "fileName";
-        break;
+  let key;
+  switch (orderBy) {
+    case "size":
+      key = "size";
+      break;
+    case "lastModified":
+      key = "lastModified";
+      break;
+    case "fileName":
+      key = "fileName";
+      break;
+  }
+  // sort by direction
+  const orderByDirectionModifier = orderByDirection === "Descending" ? -1 : 1;
+  files.sort((a, b) => {
+    if (key === "fileName") {
+      return (a[key] > b[key] ? 1 : -1) * orderByDirectionModifier;
     }
-    // sort by direction
-    files.sort((a, b) => {
-      if (orderByDirection === "Descending") {
-        if (key === "fileName") {
-          return a[key] > b[key] ? -1 : 1;
-        }
-        return a[key] - b[key];
-      }
-      if (orderByDirection === "Asending") {
-        if (key === "fileName") {
-          return a[key] > b[key] ? 1 : -1;
-        }
-        return b[key] - a[key];
-      }
-    });
+    return (b[key] - a[key]) * orderByDirectionModifier;
+  });
 
-    return res.status(200).send({
-      isDirectory: true,
-      files: files.map((f) => {
-        return f.fileName;
-      }),
-    });
-  }
+  return res.status(200).send({
+    isDirectory: true,
+    files: files.map((f) => f.fileName),
+  });
 });
 
 router.post("/*", async function (req, res, next) {
