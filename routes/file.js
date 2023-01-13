@@ -12,7 +12,7 @@ router.get("/*", async function (req, res, next) {
     return res.download(filePath);
   }
   const { orderBy, orderByDirection, filterByName } = req.query;
-  // filter dir files by name
+  // filter dir
   const files = fs
     .readdirSync(filePath)
     .filter((file) => !filterByName || file.includes(filterByName))
@@ -24,6 +24,9 @@ router.get("/*", async function (req, res, next) {
         lastModified: stats.mtimeMs,
       };
     });
+
+  // sort by direction
+  const orderByDirectionModifier = orderByDirection === "Descending" ? -1 : 1;
   let key;
   switch (orderBy) {
     case "size":
@@ -36,8 +39,6 @@ router.get("/*", async function (req, res, next) {
       key = "fileName";
       break;
   }
-  // sort by direction
-  const orderByDirectionModifier = orderByDirection === "Descending" ? -1 : 1;
   files.sort((a, b) => {
     if (key === "fileName") {
       return (a[key] > b[key] ? 1 : -1) * orderByDirectionModifier;
