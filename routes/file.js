@@ -6,7 +6,7 @@ const multer = require("multer");
 router.get("/*", async function (req, res, next) {
   const filePath = "files" + req.path;
   if (!fs.existsSync(filePath)) {
-    return res.status(404).send("not found");
+    return res.status(404).send("Not found");
   }
   if (fs.statSync(filePath).isFile()) {
     return res.download(filePath);
@@ -66,7 +66,7 @@ router.post("/*", async function (req, res, next) {
       fs.mkdirSync(targetDir);
     }
     if (fs.existsSync(`${targetDir}/${file.originalname}`)) {
-      cb(new Error("file already existed"));
+      cb(new Error("File already existed"));
     } else {
       cb(null, true);
     }
@@ -76,7 +76,7 @@ router.post("/*", async function (req, res, next) {
     if (err) {
       return res.status(400).send(err.message);
     }
-    return res.status(200).send("file saved");
+    return res.status(200).send("File saved");
   });
 });
 
@@ -98,34 +98,29 @@ router.patch("/*", async function (req, res, next) {
     }
   }
   if (!fs.existsSync(targetDir)) {
-    return res.status(400).send("path not found");
+    return res.status(400).send("Path not found");
   }
   const upload = multer({ storage, fileFilter }).single("file");
   upload(req, res, function (err) {
     if (err) {
       return res.status(400).send(err.message);
     }
-    return res.status(200).send("file saved");
+    return res.status(200).send("File saved");
   });
 });
 
 router.delete("/*", async function (req, res, next) {
   const filePath = "files" + req.originalUrl.replace(req.baseUrl, "");
-  if (fs.existsSync(filePath)) {
-    if (fs.statSync(filePath).isFile()) {
-      fs.unlinkSync(filePath);
-      fs.unlink(filePathe, (err) => {
-        if (err) {
-          throw err;
-        }
-      });
-    } else {
-      fs.rmSync(filePath, { recursive: true });
-    }
-    return res.status(200).send("delted");
-  } else {
-    return res.status(404).send("not found");
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).send("File not found");
   }
+
+  if (fs.statSync(filePath).isFile()) {
+    fs.unlinkSync(filePath);
+  } else {
+    fs.rmSync(filePath, { recursive: true });
+  }
+  return res.status(200).send("Delted");
 });
 
 module.exports = router;
