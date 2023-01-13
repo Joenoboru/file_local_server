@@ -65,11 +65,8 @@ router.post("/*", async function (req, res, next) {
     if (!fs.existsSync(targetDir)) {
       fs.mkdirSync(targetDir);
     }
-    if (fs.statSync(targetDir).isFile()) {
-      cb(new Error("it's not file path"));
-    }
     if (fs.existsSync(`${targetDir}/${file.originalname}`)) {
-      cb(new Error("file existed"));
+      cb(new Error("file already existed"));
     } else {
       cb(null, true);
     }
@@ -94,14 +91,14 @@ router.patch("/*", async function (req, res, next) {
     },
   });
   function fileFilter(req, file, cb) {
-    if (fs.statSync(targetDir).isFile()) {
-      cb(new Error("it's not file path"));
-    }
     if (fs.existsSync(`${targetDir}/${file.originalname}`)) {
       cb(null, true);
     } else {
       cb(new Error("file not found"));
     }
+  }
+  if (!fs.existsSync(targetDir)) {
+    return res.status(400).send("path not found");
   }
   const upload = multer({ storage, fileFilter }).single("file");
   upload(req, res, function (err) {
