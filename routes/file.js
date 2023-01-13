@@ -94,7 +94,7 @@ router.patch("/*", async function (req, res, next) {
     if (fs.existsSync(`${targetDir}/${file.originalname}`)) {
       cb(null, true);
     } else {
-      cb(new Error("file not found"));
+      cb(new Error("File not found"));
     }
   }
   if (!fs.existsSync(targetDir)) {
